@@ -60,24 +60,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get("session_id");
-  if (!sessionId) {
-    return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
-  }
-  try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items"],
-    });
-    const lineItems = (session as any).line_items?.data || [];
-    const firstItem = lineItems[0];
-    const priceId = firstItem?.price?.id as string | undefined;
-    const productId = firstItem?.price?.product as string | undefined;
-    const isPremium = productId === "prod_UAcE40A6k8TdVc" || priceId === "price_1TCH56D1XA0S2TWeUVWUZil1";
-    return NextResponse.json({ premium: isPremium });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
