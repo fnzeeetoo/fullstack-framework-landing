@@ -14,13 +14,20 @@ export async function POST(request: Request) {
 
     const { priceId, successUrl, cancelUrl } = await request.json();
 
-    if (!priceId) {
+    // Map legacy placeholder IDs to real Stripe price IDs
+    const priceIdMap: Record<string, string> = {
+      "price_basic": "price_1TCH4zD1XA0S2TWeLqpyf0Ne",
+      "price_premium": "price_1TCH56D1XA0S2TWeUVWUZil1",
+    };
+    const resolvedPriceId = priceIdMap[priceId] || priceId;
+
+    if (!resolvedPriceId) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: resolvedPriceId, quantity: 1 }],
       mode: "payment",
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
@@ -58,6 +65,7 @@ export async function GET(request: Request) {
     const firstItem = lineItems[0];
     const priceId = firstItem?.price?.id as string | undefined;
     const productId = firstItem?.price?.product as string | undefined;
+    // Recognize premium by known IDs
     const isPremium = productId === "prod_UAcE40A6k8TdVc" || priceId === "price_1TCH56D1XA0S2TWeUVWUZil1";
     return NextResponse.json({ premium: isPremium });
   } catch (err: any) {
