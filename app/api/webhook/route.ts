@@ -24,13 +24,22 @@ export async function POST(request: Request) {
   const session = event.data.object as Stripe.Checkout.Session;
 
   if (event.type === "checkout.session.completed") {
-    // Record purchase (simple JSON file for MVP, switch to DB in prod)
+    // Extract product info from line_items
+    const lineItems = session.line_items as Stripe.Checkout.Session.LineItem[] | null;
+    const firstItem = lineItems?.[0];
+    const priceId = firstItem?.price?.id as string | undefined;
+    const productId = firstItem?.price?.product as string | undefined;
+
+    // Determine premium by comparing to our known product IDs
+    const isPremium = productId === "prod_UAcE40A6k8TdVc" || priceId === "price_1TCH56D1XA0S2TWeUVWUZil1";
+
     const purchase = {
       id: session.id,
       customer_email: session.customer_email,
-      product_id: session.display_items?.[0]?.product,
+      product_id: productId,
+      price_id: priceId,
       amount_total: session.amount_total,
-      premium: session.display_items?.[0]?.product?.includes("premium"),
+      premium: isPremium,
       license_key: generateLicenseKey(),
       created_at: new Date().toISOString(),
     };
