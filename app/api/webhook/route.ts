@@ -24,8 +24,8 @@ export async function POST(request: Request) {
   const session = event.data.object as Stripe.Checkout.Session;
 
   if (event.type === "checkout.session.completed") {
-    // Extract product info from line_items
-    const lineItems = session.line_items as Stripe.Checkout.Session.LineItem[] | null;
+    // Extract product info from line_items (use any to avoid TS issues)
+    const lineItems = (session as any).line_items as Array<{ price?: { id?: string; product?: string } }> | undefined;
     const firstItem = lineItems?.[0];
     const priceId = firstItem?.price?.id as string | undefined;
     const productId = firstItem?.price?.product as string | undefined;
