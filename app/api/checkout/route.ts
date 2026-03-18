@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecret) {
-  throw new Error("STRIPE_SECRET_KEY is not set");
-}
-
-const stripe = new Stripe(stripeSecret, {
-  apiVersion: "2024-06-20",
-});
 
 export async function POST(request: Request) {
+  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecret) {
+    return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
+  }
+
+  const Stripe = (await import("stripe")).default;
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
+
   try {
     const { priceId, successUrl, cancelUrl } = await request.json();
 
@@ -20,12 +18,7 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
@@ -34,7 +27,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (err: any) {
     console.error("Checkout error:", err);
-    return NextResponse.json({ error: err.message, details: err }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecret) {
+    return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
+  }
+
+  const Stripe = (await import("stripe")).default;
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("session_id");
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    }
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["line_items"],
+    });
+    const lineItems = (session as any).line_items?.data || [];
+    const firstItem = lineItems[0];
+    const priceId = firstItem?.price?.id as string | undefined;
+    const productId = firstItem?.price?.product as string | undefined;
+    const isPremium = productId === "prod_UAcE40A6k8TdVc" || priceId === "price_1TCH56D1XA0S2TWeUVWUZil1";
+    return NextResponse.json({ premium: isPremium });
+  } catch (err: any) {
+    console.error("GET /api/checkout error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
