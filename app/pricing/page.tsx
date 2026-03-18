@@ -1,6 +1,9 @@
 import Link from "next/link";
 import PricingCard from "@/components/PricingCard";
 
+// Prices as of 2026-03-18: Basic $99, Premium $199
+// Price IDs from Stripe: Basic: price_1TCH4z... Premium: price_1TCH56...
+
 export default function Pricing() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
