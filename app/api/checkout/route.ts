@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecret) {
-    return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
-  }
-
-  const Stripe = (await import("stripe")).default;
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
-
+  console.log("Checkout handler start");
   try {
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      console.error("STRIPE_SECRET_KEY missing");
+      return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
+    }
+
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
+
     const { priceId, successUrl, cancelUrl } = await request.json();
 
     if (!priceId) {
@@ -27,20 +29,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (err: any) {
     console.error("Checkout error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: err.message || "Unknown error", 
+      details: typeof err === 'object' ? (err.stack || err) : undefined
+    }, { status: 500 });
   }
 }
 
 export async function GET(request: Request) {
-  const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecret) {
-    return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
-  }
-
-  const Stripe = (await import("stripe")).default;
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
-
   try {
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      return NextResponse.json({ error: "Stripe secret key not configured" }, { status: 500 });
+    }
+
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
+
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("session_id");
     if (!sessionId) {
