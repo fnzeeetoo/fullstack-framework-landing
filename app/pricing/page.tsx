@@ -29,7 +29,7 @@ export default function Pricing() {
               "All future minor updates",
             ]}
             buttonText="Buy Now"
-            priceId="price_basic"
+            priceId="price_1TCH4zD1XA0S2TWeLqpyf0Ne"
           />
           <PricingCard
             title="Premium"
@@ -42,7 +42,7 @@ export default function Pricing() {
               "Community access (Discord)",
             ]}
             buttonText="Buy Now"
-            priceId="price_premium"
+            priceId="price_1TCH56D1XA0S2TWeUVWUZil1"
             highlighted
           />
         </div>
