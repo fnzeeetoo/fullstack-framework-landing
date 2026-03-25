@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const sessions = await stripe.checkout.sessions.list({
       limit: 100,
-      expand: ["line_items"],
+      expand: ["data.line_items"],
     });
 
     const purchases = sessions.data.map(session => {
